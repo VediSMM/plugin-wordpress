@@ -1,0 +1,21 @@
+{
+  "name": "vedismm/plugin-wordpress",
+  "description": "VediSMM integration plugin for WordPress.",
+  "type": "wordpress-plugin",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "VediSMM\\WordPress\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/DomainTest.php",
+    "phpstan": "php tests/StaticAnalysis.php"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
