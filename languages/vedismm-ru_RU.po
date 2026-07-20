@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: VediSMM 0.1.0-dev\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru_RU\n"
+
+msgid "Send to VediSMM"
+msgstr "Отправить в VediSMM"
+
+msgid "Create VediSMM draft"
+msgstr "Создать черновик VediSMM"
+
+msgid "Schedule with VediSMM"
+msgstr "Запланировать через VediSMM"
+
+msgid "Publish with VediSMM"
+msgstr "Опубликовать через VediSMM"
+
+msgid "VediSMM API token"
+msgstr "API-токен VediSMM"

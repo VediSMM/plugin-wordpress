@@ -1,0 +1,38 @@
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: wordpress
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    image: wordpress:7.0.2-php8.4-apache
+    depends_on:
+      db:
+        condition: service_healthy
+      fake-api:
+        condition: service_started
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      VEDISMM_API_BASE_URL: http://fake-api:8080/api/v1
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/vedismm:ro
+    ports:
+      - "18088:80"
+
+  fake-api:
+    image: php:8.4-cli
+    working_dir: /app
+    command: php -S 0.0.0.0:8080 router.php
+    volumes:
+      - ./tests/fake-api:/app:ro

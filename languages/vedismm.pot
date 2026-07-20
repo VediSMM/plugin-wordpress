@@ -1,0 +1,20 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: VediSMM 0.1.0-dev\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Send to VediSMM"
+msgstr ""
+
+msgid "Create VediSMM draft"
+msgstr ""
+
+msgid "Schedule with VediSMM"
+msgstr ""
+
+msgid "Publish with VediSMM"
+msgstr ""
+
+msgid "VediSMM API token"
+msgstr ""
