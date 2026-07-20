@@ -12,7 +12,10 @@
     }
   },
   "scripts": {
-    "test": "php tests/DomainTest.php",
+    "test": [
+      "php tests/DomainTest.php",
+      "php tests/SubmissionTest.php"
+    ],
     "phpstan": "php tests/StaticAnalysis.php"
   },
   "config": {

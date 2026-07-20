@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $files = [];
+foreach (['vedismm.php', 'uninstall.php'] as $rootFile) {
+    $path = $root . '/' . $rootFile;
+    if (is_file($path)) {
+        $files[] = $path;
+    }
+}
+
 foreach (['src', 'tests'] as $directory) {
     $path = $root . '/' . $directory;
     if (!is_dir($path)) {
