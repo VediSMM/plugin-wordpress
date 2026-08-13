@@ -10,10 +10,12 @@ final class Plugin
     {
         $settings = new SettingsPage();
         $metabox = new MetaBox();
+        $submission = new PostSubmissionHandler();
 
         if (function_exists('add_action')) {
             add_action('admin_init', [$settings, 'register']);
             add_action('add_meta_boxes', [$metabox, 'register']);
+            $submission->register();
         }
     }
 }

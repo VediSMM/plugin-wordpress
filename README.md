@@ -20,6 +20,11 @@ shortening is enabled; disabling shortening forces source attribution off. The
 plugin sends original content and URLs unchanged and stores no generated-link
 state.
 
+The **Send to VediSMM** submit button uses WordPress's native post-save hook,
+nonce, and `edit_post` capability check. It saves the two checkbox choices as
+post metadata so the next edit shows the same state; an ordinary post save does
+not contact VediSMM.
+
 When source attribution is enabled, VediSMM uses each target network key. If a
 non-empty `utm_source` is absent, it adds `utm_source=<network>` and preserves
 any existing `utm_term`. If `utm_source` exists, it is preserved and all

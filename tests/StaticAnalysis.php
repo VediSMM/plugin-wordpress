@@ -46,6 +46,10 @@ if ($failed !== []) {
 $metabox = (string) file_get_contents($root . '/src/WordPress/MetaBox.php');
 $draftInput = (string) file_get_contents($root . '/src/Domain/DraftInput.php');
 $mapper = (string) file_get_contents($root . '/src/WordPress/ContentMapper.php');
+$handler = is_file($root . '/src/WordPress/PostSubmissionHandler.php')
+    ? (string) file_get_contents($root . '/src/WordPress/PostSubmissionHandler.php')
+    : '';
+$plugin = (string) file_get_contents($root . '/src/WordPress/Plugin.php');
 $english = (string) file_get_contents($root . '/docs/en/guide.md');
 $russian = (string) file_get_contents($root . '/docs/ru/guide.md');
 $pot = (string) file_get_contents($root . '/languages/vedismm.pot');
@@ -63,6 +67,12 @@ $contractChecks = [
     'Russian tracking controls' => str_contains($po, 'Сокращать ссылки') && str_contains($po, 'Добавлять источник площадки'),
     'no plugin URL rewriting' => !str_contains($mapper, 'parse_url') && !str_contains($mapper, 'go.vedismm.ru'),
     'no generated-link state' => !str_contains($metabox . $draftInput . $mapper, 'generated_link'),
+    'native save hook bridge' => str_contains($plugin, 'PostSubmissionHandler')
+        && str_contains($handler, "add_action('save_post'")
+        && str_contains($handler, 'wp_verify_nonce')
+        && str_contains($handler, "current_user_can('edit_post'")
+        && str_contains($handler, "'_vedismm_tracking'")
+        && str_contains($handler, 'SubmissionService'),
 ];
 
 foreach ($contractChecks as $name => $passed) {

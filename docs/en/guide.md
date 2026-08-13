@@ -16,6 +16,10 @@ VediSMM for WordPress lets editors send posts and pages to VediSMM without expos
 - Publish first creates a draft, then queues an explicit VediSMM publish job.
 
 Saving a WordPress post never publishes automatically.
+The **Send to VediSMM** button submits through WordPress's native `save_post`
+hook after nonce and `edit_post` capability validation. It persists and
+restores the two tracking choices; an ordinary save without that explicit
+button does not call the API.
 
 ## Tracking Links
 

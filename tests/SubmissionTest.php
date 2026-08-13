@@ -49,6 +49,7 @@ $resultClass = 'VediSMM\\WordPress\\Application\\SubmissionResult';
 $settingsClass = 'VediSMM\\WordPress\\WordPress\\SettingsPage';
 $pluginClass = 'VediSMM\\WordPress\\WordPress\\Plugin';
 $metaboxClass = 'VediSMM\\WordPress\\WordPress\\MetaBox';
+$handlerClass = 'VediSMM\\WordPress\\WordPress\\PostSubmissionHandler';
 
 foreach ([
     'VediSMM gateway exists' => $gatewayClass,
@@ -57,6 +58,7 @@ foreach ([
     'Settings page exists' => $settingsClass,
     'Plugin bootstrap exists' => $pluginClass,
     'Meta box adapter exists' => $metaboxClass,
+    'Native post submission handler exists' => $handlerClass,
 ] as $label => $class) {
     wp_submission_check($label, class_exists($class));
 }
@@ -65,7 +67,8 @@ if (!class_exists($gatewayClass)
     || !class_exists($resultClass)
     || !class_exists($settingsClass)
     || !class_exists($pluginClass)
-    || !class_exists($metaboxClass)) {
+    || !class_exists($metaboxClass)
+    || !class_exists($handlerClass)) {
     wp_submission_finish();
 }
 
@@ -244,6 +247,110 @@ wp_submission_check('settings can explicitly remove token',
 wp_submission_check('settings never render the saved token value',
     $settingsClass::renderTokenValue('saved-token') === '');
 
+$wpHooks = [];
+$wpMeta = [];
+$wpNonceValid = true;
+$wpCanEdit = true;
+if (!function_exists('add_action')) {
+    function add_action(string $hook, callable $callback, int $priority = 10, int $acceptedArgs = 1): void
+    {
+        global $wpHooks;
+        $wpHooks[$hook][] = [$callback, $priority, $acceptedArgs];
+    }
+}
+if (!function_exists('wp_verify_nonce')) {
+    function wp_verify_nonce(mixed $nonce, string $action): int|false
+    {
+        global $wpNonceValid;
+        return $wpNonceValid && $nonce === 'valid-nonce' && $action === \VediSMM\WordPress\WordPress\MetaBox::NONCE_ACTION ? 1 : false;
+    }
+}
+if (!function_exists('current_user_can')) {
+    function current_user_can(string $capability, mixed ...$args): bool
+    {
+        global $wpCanEdit;
+        return $wpCanEdit && $capability === 'edit_post' && ($args[0] ?? null) === 42;
+    }
+}
+if (!function_exists('update_post_meta')) {
+    function update_post_meta(int $postId, string $key, mixed $value): void
+    {
+        global $wpMeta;
+        $wpMeta[$postId][$key] = $value;
+    }
+}
+if (!function_exists('get_post_meta')) {
+    function get_post_meta(int $postId, string $key, bool $single = false): mixed
+    {
+        global $wpMeta;
+        return $wpMeta[$postId][$key] ?? ($single ? '' : []);
+    }
+}
+if (!function_exists('get_permalink')) {
+    function get_permalink(int $postId): string
+    {
+        return 'https://example.test/post/' . $postId;
+    }
+}
+if (!function_exists('wp_is_post_autosave')) {
+    function wp_is_post_autosave(int $postId): false
+    {
+        return false;
+    }
+}
+if (!function_exists('wp_is_post_revision')) {
+    function wp_is_post_revision(int $postId): false
+    {
+        return false;
+    }
+}
+
+$calls = [];
+$handler = new $handlerClass($service);
+$handler->register();
+wp_submission_check('WordPress registers the native save_post submission boundary',
+    isset($wpHooks['save_post'][0])
+    && $wpHooks['save_post'][0][1] === 10
+    && $wpHooks['save_post'][0][2] === 3);
+
+$_POST = [
+    'vedismm_nonce' => 'valid-nonce',
+    'vedismm_submit_action' => 'draft',
+    'vedismm_tracking' => ['shorten_links' => '1', 'add_source' => '1'],
+];
+$handler->handle(42, (object) [
+    'ID' => 42,
+    'post_type' => 'post',
+    'post_title' => 'Tracked post',
+    'post_content' => '<p>Original body</p>',
+    'post_modified_gmt' => '1970-01-01 00:00:07',
+], true);
+wp_submission_check('native save handler verifies request, persists state and reaches the gateway',
+    ($wpMeta[42]['_vedismm_tracking'] ?? null) === ['shorten_links' => true, 'add_source' => true]
+    && count($calls) === 1
+    && ($calls[0]['body']['options']['tracking'] ?? null) === ['shorten_links' => true, 'add_source' => true]
+    && ($calls[0]['body']['link'] ?? null) === 'https://example.test/post/42'
+    && !array_key_exists('shorten_links', $calls[0]['body'])
+    && !array_key_exists('add_source', $calls[0]['body']),
+    $calls[0] ?? null);
+
+$calls = [];
+$_POST['vedismm_tracking'] = ['shorten_links' => '0', 'add_source' => '1'];
+$handler->handle(42, (object) ['ID' => 42, 'post_type' => 'post', 'post_title' => 'Tracked post'], true);
+wp_submission_check('native save handler strictly normalizes and persists the dependency clamp',
+    ($wpMeta[42]['_vedismm_tracking'] ?? null) === ['shorten_links' => false, 'add_source' => false]
+    && ($calls[0]['body']['options']['tracking'] ?? null) === ['shorten_links' => false, 'add_source' => false]);
+
+$wpNonceValid = false;
+$calls = [];
+$handler->handle(42, (object) ['ID' => 42, 'post_type' => 'post', 'post_title' => 'Blocked'], true);
+wp_submission_check('invalid native nonce blocks persistence and API submission', $calls === []);
+$wpNonceValid = true;
+$wpCanEdit = false;
+$handler->handle(42, (object) ['ID' => 42, 'post_type' => 'post', 'post_title' => 'Blocked'], true);
+wp_submission_check('missing edit_post capability blocks API submission', $calls === []);
+$wpCanEdit = true;
+
 if (!function_exists('wp_nonce_field')) {
     function wp_nonce_field(string $action, string $name): void
     {
@@ -251,8 +358,9 @@ if (!function_exists('wp_nonce_field')) {
     }
 }
 
+$wpMeta[42]['_vedismm_tracking'] = ['shorten_links' => true, 'add_source' => true];
 ob_start();
-(new $metaboxClass())->render();
+(new $metaboxClass())->render((object) ['ID' => 42]);
 $metabox = (string) ob_get_clean();
 wp_submission_check('tracking controls are native accessible dependent checkboxes',
     str_contains($metabox, 'name="vedismm_tracking[shorten_links]"')
@@ -262,6 +370,9 @@ wp_submission_check('tracking controls are native accessible dependent checkboxe
     && str_contains($metabox, 'disabled')
     && str_contains($metabox, 'utm_source')
     && str_contains($metabox, 'utm_term')
+    && str_contains($metabox, 'name="vedismm_submit_action"')
+    && str_contains($metabox, 'type="submit"')
+    && substr_count($metabox, ' checked') >= 2
     && str_contains($metabox, $metaboxClass::NONCE_ACTION),
     $metabox);
 
