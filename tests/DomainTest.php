@@ -81,6 +81,33 @@ wp_domain_check('DraftInput keeps positive unique account, group and media IDs',
     $draft->accountIds === [101, 102]
     && $draft->groupIds === [201]
     && $draft->mediaIds === [301, 302]);
+wp_domain_check('DraftInput preserves legacy construction with tracking disabled',
+    $draft->toArray()['options']['tracking'] === [
+        'shorten_links' => false,
+        'add_source' => false,
+    ],
+    $draft->toArray());
+
+$trackedDraft = new $draftInputClass(
+    'Tracked',
+    'Body',
+    'https://example.test/tracked',
+    [],
+    [],
+    [],
+    true,
+    true
+);
+wp_domain_check('DraftInput serializes explicit booleans only under options.tracking',
+    $trackedDraft->toArray()['options'] === [
+        'tracking' => [
+            'shorten_links' => true,
+            'add_source' => true,
+        ],
+    ]
+    && !array_key_exists('shorten_links', $trackedDraft->toArray())
+    && !array_key_exists('add_source', $trackedDraft->toArray()),
+    $trackedDraft->toArray());
 wp_domain_check('non-HTTP URL normalizes to null',
     $normalizerClass::url('javascript:alert(1)') === null
     && $normalizerClass::url('ftp://example.test/file') === null);
@@ -106,5 +133,37 @@ wp_domain_check('WordPress mapper is pure and maps array posts to DraftInput',
     && $mapped->accountIds === [101, 102]
     && $mapped->groupIds === [201]
     && $mapped->mediaIds === []);
+
+$mappedTracking = $mapperClass::fromPost([
+    'post_title' => 'Tracked',
+    'post_content' => 'Body',
+    'permalink' => 'https://example.test/tracked',
+], [], [
+    'shorten_links' => '1',
+    'add_source' => '1',
+]);
+wp_domain_check('WordPress mapper recognizes native checked values',
+    $mappedTracking->toArray()['options']['tracking'] === [
+        'shorten_links' => true,
+        'add_source' => true,
+    ]);
+
+$mappedUnchecked = $mapperClass::fromPost([], [], [
+    'shorten_links' => 'false',
+    'add_source' => 'on',
+]);
+wp_domain_check('WordPress mapper rejects truthy strings and enforces the source dependency',
+    $mappedUnchecked->toArray()['options']['tracking'] === [
+        'shorten_links' => false,
+        'add_source' => false,
+    ],
+    $mappedUnchecked->toArray());
+
+$mappedDependent = $mapperClass::fromPost([], [], [
+    'shorten_links' => false,
+    'add_source' => true,
+]);
+wp_domain_check('WordPress mapper forces source off when shortening is off',
+    $mappedDependent->toArray()['options']['tracking']['add_source'] === false);
 
 wp_domain_finish();

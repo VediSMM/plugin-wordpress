@@ -18,3 +18,18 @@ msgstr ""
 
 msgid "VediSMM API token"
 msgstr ""
+
+msgid "Tracking links"
+msgstr ""
+
+msgid "Shorten links"
+msgstr ""
+
+msgid "Create a separate short link automatically for each target network."
+msgstr ""
+
+msgid "Add network source"
+msgstr ""
+
+msgid "If utm_source is absent, add utm_source=<network> and preserve existing utm_term. If utm_source exists, preserve it and replace or add one utm_term=<network>."
+msgstr ""

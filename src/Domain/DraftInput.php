@@ -15,6 +15,8 @@ final readonly class DraftInput
     public array $groupIds;
     /** @var array<int,int> */
     public array $mediaIds;
+    public bool $shortenLinks;
+    public bool $addSource;
 
     /** @param array<int,mixed> $accountIds @param array<int,mixed> $groupIds @param array<int,mixed> $mediaIds */
     public function __construct(
@@ -23,7 +25,9 @@ final readonly class DraftInput
         ?string $link,
         array $accountIds,
         array $groupIds,
-        array $mediaIds
+        array $mediaIds,
+        bool $shortenLinks = false,
+        bool $addSource = false
     ) {
         $this->title = Normalizer::title($title);
         $this->content = Normalizer::text($content);
@@ -31,9 +35,11 @@ final readonly class DraftInput
         $this->accountIds = Normalizer::positiveUniqueIds($accountIds);
         $this->groupIds = Normalizer::positiveUniqueIds($groupIds);
         $this->mediaIds = Normalizer::positiveUniqueIds($mediaIds);
+        $this->shortenLinks = $shortenLinks;
+        $this->addSource = $shortenLinks && $addSource;
     }
 
-    /** @return array{title:string,content:string,link:?string,account_ids:array<int,int>,group_ids:array<int,int>,media_ids:array<int,int>} */
+    /** @return array{title:string,content:string,link:?string,account_ids:array<int,int>,group_ids:array<int,int>,media_ids:array<int,int>,options:array{tracking:array{shorten_links:bool,add_source:bool}}} */
     public function toArray(): array
     {
         return [
@@ -43,6 +49,12 @@ final readonly class DraftInput
             'account_ids' => $this->accountIds,
             'group_ids' => $this->groupIds,
             'media_ids' => $this->mediaIds,
+            'options' => [
+                'tracking' => [
+                    'shorten_links' => $this->shortenLinks,
+                    'add_source' => $this->addSource,
+                ],
+            ],
         ];
     }
 }

@@ -11,7 +11,21 @@ Status: `0.1.0-dev`.
 - Map a WordPress content entity to `title`, `content`, `link`, `account_ids`, `group_ids`, and `media_ids`.
 - Create drafts with a stable CMS-scoped idempotency key.
 - Offer explicit draft, schedule, and publish actions. No automatic publish on content save.
+- Offer per-submission link shortening and network-source attribution controls, both off by default.
 - Redact credentials and API tokens from logs, UI, test output, and screenshots.
+
+Tracking choices are sent only as `options.tracking.shorten_links` and
+`options.tracking.add_source`. Source attribution is available only while link
+shortening is enabled; disabling shortening forces source attribution off. The
+plugin sends original content and URLs unchanged and stores no generated-link
+state.
+
+When source attribution is enabled, VediSMM uses each target network key. If a
+non-empty `utm_source` is absent, it adds `utm_source=<network>` and preserves
+any existing `utm_term`. If `utm_source` exists, it is preserved and all
+existing `utm_term` values are replaced (or one is added) with exactly one
+`utm_term=<network>`. Other query parameters, encoded values, their order, and
+the fragment remain unchanged.
 
 ## Local Development
 

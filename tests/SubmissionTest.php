@@ -133,7 +133,12 @@ $post = [
     'permalink' => 'https://example.test/launch',
 ];
 $targets = ['account_ids' => ['101', '101'], 'group_ids' => ['201'], 'media_ids' => []];
-$context = ['can_publish' => true, 'nonce_valid' => true, 'revision' => 7];
+$context = [
+    'can_publish' => true,
+    'nonce_valid' => true,
+    'revision' => 7,
+    'tracking' => ['shorten_links' => '1', 'add_source' => '1'],
+];
 
 $draftResult = $service->submit($post, $targets, $context + ['action' => 'draft']);
 wp_submission_check('draft submission returns a typed result',
@@ -154,8 +159,20 @@ wp_submission_check('draft request carries body, token and stable idempotency ke
         'account_ids' => [101],
         'group_ids' => [201],
         'media_ids' => [],
+        'options' => [
+            'tracking' => [
+                'shorten_links' => true,
+                'add_source' => true,
+            ],
+        ],
     ],
     $calls[0] ?? null);
+wp_submission_check('gateway emits no top-level tracking fields or rewritten URLs',
+    !array_key_exists('shorten_links', $calls[0]['body'])
+    && !array_key_exists('add_source', $calls[0]['body'])
+    && $calls[0]['body']['link'] === 'https://example.test/launch'
+    && $calls[0]['body']['content'] === 'Body text',
+    $calls[0]['body'] ?? null);
 
 $calls = [];
 $scheduleResult = $service->submit($post, $targets, $context + [
@@ -226,5 +243,26 @@ wp_submission_check('settings can explicitly remove token',
     $settingsClass::sanitizeToken('', 'saved-token', true) === null);
 wp_submission_check('settings never render the saved token value',
     $settingsClass::renderTokenValue('saved-token') === '');
+
+if (!function_exists('wp_nonce_field')) {
+    function wp_nonce_field(string $action, string $name): void
+    {
+        echo '<input type="hidden" name="' . $name . '" data-nonce-action="' . $action . '">';
+    }
+}
+
+ob_start();
+(new $metaboxClass())->render();
+$metabox = (string) ob_get_clean();
+wp_submission_check('tracking controls are native accessible dependent checkboxes',
+    str_contains($metabox, 'name="vedismm_tracking[shorten_links]"')
+    && str_contains($metabox, 'name="vedismm_tracking[add_source]"')
+    && str_contains($metabox, 'aria-describedby="vedismm-shorten-links-help"')
+    && str_contains($metabox, 'aria-describedby="vedismm-add-source-help"')
+    && str_contains($metabox, 'disabled')
+    && str_contains($metabox, 'utm_source')
+    && str_contains($metabox, 'utm_term')
+    && str_contains($metabox, $metaboxClass::NONCE_ACTION),
+    $metabox);
 
 wp_submission_finish();
