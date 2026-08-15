@@ -38,7 +38,7 @@ done
 
 grep -q 'Plugin Name: VediSMM' "$ROOT/vedismm.php" || fail "missing WordPress plugin header"
 grep -q 'Text Domain: vedismm' "$ROOT/vedismm.php" || fail "missing text domain header"
-grep -q 'Stable tag: 0.1.0-dev' "$ROOT/readme.txt" || fail "missing readme stable tag"
+grep -q 'Stable tag: 1.1.0' "$ROOT/readme.txt" || fail "missing readme stable tag"
 grep -q 'VediSMM account' "$ROOT/readme.txt" || fail "missing external account disclosure"
 
 rm -f "$ZIP_PATH"

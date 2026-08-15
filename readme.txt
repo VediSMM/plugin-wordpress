@@ -4,7 +4,7 @@ Tags: social media, publishing, scheduling, autoposting, vedismm
 Requires at least: 7.0
 Tested up to: 7.0.2
 Requires PHP: 8.1
-Stable tag: 0.1.0-dev
+Stable tag: 1.1.0
 License: MIT
 License URI: https://opensource.org/license/mit/
 
@@ -37,6 +37,6 @@ The token is stored server-side in WordPress options and is not rendered back in
 
 == Changelog ==
 
-= 0.1.0-dev =
+= 1.1.0 =
 
 Initial development release package.

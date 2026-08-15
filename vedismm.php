@@ -3,7 +3,7 @@
  * Plugin Name: VediSMM
  * Plugin URI: https://vedismm.ru/
  * Description: Send WordPress content to VediSMM as drafts, scheduled posts, or explicit publish jobs.
- * Version: 0.1.0-dev
+ * Version: 1.1.0
  * Author: VediSMM
  * License: MIT
  * Text Domain: vedismm
